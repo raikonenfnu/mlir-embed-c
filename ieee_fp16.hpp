@@ -1,5 +1,8 @@
 #include "stdio.h"
+#include "mlir/ExecutionEngine/RunnerUtils.h"
+#include "iostream"
 
+extern "C" {
   float __gnu_h2f_ieee(short param) {
     unsigned short expHalf16 = param & 0x7C00;
     int exp1 = (int)expHalf16;
@@ -98,10 +101,56 @@
     return res;
   }
 
+struct iree_hal_executable_dispatch_state_v0_t {
+    uint32_t workgroup_size_x;
+    uint32_t workgroup_size_y;
+    uint16_t workgroup_size_z;
+    uint16_t push_constant_count;
+    uint32_t workgroup_count_x;
+    uint32_t workgroup_count_y;
+    uint16_t workgroup_count_z;
+    uint8_t max_concurrency;
+    uint8_t binding_count;
+    uint32_t *binding_lengths;
+    uint8_t **binding_ptrs;
+    uint64_t *push_constants;
+};
+
+struct iree_hal_executable_workgroup_state_v0_t {
+    uint32_t workgroup_id_x;
+    uint32_t workgroup_id_y;
+    uint16_t workgroup_id_z;
+    uint16_t reserved;
+    uint32_t processor_id;
+    uint8_t **local_memory;
+    uint32_t local_memory_size;
+};
+
+int32_t forward_dispatch_0(uint8_t *unused, struct iree_hal_executable_dispatch_state_v0_t *state,
+                           struct iree_hal_executable_workgroup_state_v0_t *workgroup_id);
+
 void _mlir_ciface_OpName() {
+    std::cout<<"wut wut\n";
     printf("hello from cpp side!\n");
 }
 
+// TODO: SUpport fp16 with custom Fp16 type.
+void _mlir_ciface_mem_promote(UnrankedMemRefType<float> *m) {
+  DynamicMemRefType<float> src(*m);
+  std::cout<<"ptr:"<<src.basePtr<<"\n";
+  std::cout<<"numel:"<<src.sizes[0]<<"\n";
+  for (int i = 0; i < src.sizes[0]; i++) {
+    std::cout<<src.data[i]<<",";
+  }
+  std::cout<<"\n";
+}
+
 // void _mlir_ciface_mem_promote(int64_t rank, void *ptr) {
-//   UnrankedMemRefType<double> descriptor = {rank, ptr};
+//   std::cout<<"rank:"<<rank<<"\n";
+//   std::cout<<"received:"<<ptr<<"\n";
+//   // printMemrefF32(rank, ptr);
+//   // UnrankedMemRefType<float> descriptor = {rank, ptr};
+//   // _mlir_ciface_printMemrefF32(&descriptor);
+//   // impl::printMemRef(DynamicMemRefType<float>(descriptor));
 // }
+} // extern "C"

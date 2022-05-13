@@ -2,35 +2,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
-#include "ieee_fp16.h"
-// TODO: Make C++ form
-// TODO: Look at how we are currently doing it on other end in cpp.
-// TODO: Set include direcotry during clang and include mlir crunnerutils
-
-struct iree_hal_executable_dispatch_state_v0_t {
-    uint32_t workgroup_size_x;
-    uint32_t workgroup_size_y;
-    uint16_t workgroup_size_z;
-    uint16_t push_constant_count;
-    uint32_t workgroup_count_x;
-    uint32_t workgroup_count_y;
-    uint16_t workgroup_count_z;
-    uint8_t max_concurrency;
-    uint8_t binding_count;
-    uint32_t *binding_lengths;
-    uint8_t **binding_ptrs;
-    uint64_t *push_constants;
-};
-
-struct iree_hal_executable_workgroup_state_v0_t {
-    uint32_t workgroup_id_x;
-    uint32_t workgroup_id_y;
-    uint16_t workgroup_id_z;
-    uint16_t reserved;
-    uint32_t processor_id;
-    uint8_t **local_memory;
-    uint32_t local_memory_size;
-};
+#include "ieee_fp16.hpp"
 
 // typedef struct iree_hal_executable_dispatch_state_v0_t {
 //   // Workgroup size chosen for the dispatch. For compilation modes where the
@@ -63,17 +35,16 @@ struct iree_hal_executable_workgroup_state_v0_t {
 //   // cache misses. Less-frequently used fields can follow.
 // } iree_hal_executable_dispatch_state_v0_t;
 
-int32_t forward_dispatch_0(uint8_t *unused, struct iree_hal_executable_workgroup_state_v0_t *state,
-                           struct iree_hal_executable_workgroup_state_v0_t *workgroup_id);
-
 int main (int argc, char *argv[]) {
   float x[4] = {1.1, 2.2, 3.3, 4.4};
   float y[4] = {5.5, 6.6, 7.7, 8.8};
   float z[4] = {0.0, 0.0, 0.0, 0.0};
-  void *binding_ptrs[3] = {x, y, z};
-  size_t binding_lengths[3] =  {sizeof(x), sizeof(y), sizeof(z)};
-  uint32_t push_constants[1] = {0};
+  uint8_t *binding_ptrs[3] = {(uint8_t*)x, (uint8_t*)y, (uint8_t*)z};
+  uint32_t binding_lengths[3] =  {sizeof(x), sizeof(y), sizeof(z)};
+  uint64_t push_constants[1] = {0};
   uint32_t workgroup_ids[3] = {0, 0, 0};
+  std::cout<<"original pointer A: "<<x<<"\n";
+  std::cout<<"original pointer B: "<<y<<"\n";
 
     struct iree_hal_executable_dispatch_state_v0_t state = {
         .workgroup_size_x = 1,
@@ -100,7 +71,7 @@ int main (int argc, char *argv[]) {
 
   uint8_t *unused;
   printf("going for it!\n");
-  int32_t res = forward_dispatch_0(unused, &state, workgroup_ids);
+  int32_t res = forward_dispatch_0(unused, &state, &wg);
   printf("failed!\n");
   for (int i = 0; i < 4; i++) {
     printf("Got z[%d] = %f [Expected: %f]\n", i, z[i], x[i] + y[i]);
